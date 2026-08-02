@@ -43,7 +43,7 @@ on fs
     chown system drmrpc /dev/qseecom
     chmod 0664 /dev/ion
     chown system system /dev/ion
-    # qseecomd's SSD listener opens /dev/block/bootdevice/by-name/ssd
+    # Its SSD listener opens by-name/ssd, which ueventd may not have made yet.
     wait /dev/block/bootdevice/by-name/ssd 10
     start vendor.qseecomd
     mkdir /mnt/vendor 0775 shell system
@@ -58,7 +58,22 @@ on post-fs
 on boot
     setprop sys.usb.config adb
 
+# qseecomd is up, so the HALs that reach a trustlet through it can follow.
+on property:vendor.sys.listeners.registered=true
+    start vendor.gatekeeper_default
+    start vendor.secure_element
+
+# variant-script has copied this SKU's files into /odm.
+on property:twrp.variant.files_copied=1
+    start odm.vibratorfeature-service
+    start odm.touch_report
+    start odm.weaver-service
+    start odm.keymint-strongbox
+
 on property:twrp.modules.loaded=true
+    # KeyMint stays down until this has pointed the version properties at the
+    # installed system, so start it as early as the mapper nodes allow.
+    start odm.prepdecrypt
     # Mount firmware
     mkdir /firmware
     mount vfat /dev/block/bootdevice/by-name/modem${ro.boot.slot_suffix} /firmware ro
@@ -68,16 +83,6 @@ on property:twrp.modules.loaded=true
     wait /sys/class/power_supply/battery
     start vendor.health-default
     umount /firmware
-
-on property:ro.crypto.state=encrypted && property:ro.boot.dynamic_partitions=true
-    start odm.prepdecrypt
-
-on property:twrp.variant.files_copied=1
-    start odm.vibratorfeature-service
-    start odm.touch_report
-    start odm.weaver-service
-    start odm.keymint-strongbox
-    start odm.se_omapi
 
 on property:servicemanager.ready=true
     setprop sys.boot_completed 1
