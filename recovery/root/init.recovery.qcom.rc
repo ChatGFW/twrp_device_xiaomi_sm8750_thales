@@ -68,7 +68,6 @@ on property:twrp.variant.files_copied=1
     start odm.vibratorfeature-service
     start odm.touch_report
     start odm.weaver-service
-    start odm.keymint-strongbox
 
 on property:twrp.modules.loaded=true
     # KeyMint stays down until this has pointed the version properties at the
@@ -83,6 +82,3 @@ on property:twrp.modules.loaded=true
     wait /sys/class/power_supply/battery
     start vendor.health-default
     umount /firmware
-
-on property:servicemanager.ready=true
-    setprop sys.boot_completed 1
