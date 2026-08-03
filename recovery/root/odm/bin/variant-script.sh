@@ -34,7 +34,7 @@ case "$variant" in
     resetprop ro.twrp.y_offset "111"
     resetprop ro.twrp.h_offset "-111"
     resetprop vendor.display.enable_spr "1"
-    set_vibrator_props "170" "35" "/sys/class/qcom-haptics" "agm"
+    set_vibrator_props "170" "35" "/sys/class/qcom-haptics" "ff"
     ;;
 
 "haotian")
@@ -45,7 +45,7 @@ case "$variant" in
     resetprop vendor.display.enable_spr "1"
     resetprop ro.odm.mm.vibrator.cirrus "true"
     resetprop ro.odm.mm.vibrator.lowPowerMode "true"
-    set_vibrator_props "130" "20" "/sys/bus/i2c/drivers/cs40l26/0-0043" "agm"
+    set_vibrator_props "130" "20" "/sys/bus/i2c/drivers/cs40l26/0-0043" "ff"
     ;;
 
 "xuanyuan")
@@ -54,7 +54,7 @@ case "$variant" in
     resetprop ro.twrp.y_offset "116"
     resetprop ro.twrp.h_offset "-116"
     resetprop ro.odm.mm.vibrator.he1.0 "mihaptic"
-    set_vibrator_props "170" "20" "/sys/class/qcom-haptics" "agm"
+    set_vibrator_props "170" "20" "/sys/class/qcom-haptics" "ff"
     ;;
 
 *)
@@ -64,7 +64,7 @@ case "$variant" in
     log "Unknown variant: $variant, applying default configuration (SM8750)"
     variant="SM8750"
     model="SM8750"
-    set_vibrator_props "170" "35" "/sys/class/qcom-haptics" "agm"
+    set_vibrator_props "170" "35" "/sys/class/qcom-haptics" "ff"
     ;;
 esac
 
@@ -115,8 +115,14 @@ done
 #-------------------------------------------------
 # Copy variant-specific files
 #-------------------------------------------------
-cp -rf /odm/variant/$variant/odm/* /odm
-chmod -R 755 /odm/bin/*
+# set -e is on, so an unknown SKU with no overlay would abort the script here
+# and never raise files_copied, leaving weaver, haptics and touch unstarted.
+if [ -d "/odm/variant/$variant/odm" ]; then
+    cp -rf /odm/variant/$variant/odm/* /odm
+    chmod -R 755 /odm/bin/*
+else
+    log "No overlay for $variant, keeping the base odm"
+fi
 setprop twrp.variant.files_copied "1"
 
 #-------------------------------------------------
